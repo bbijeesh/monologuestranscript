@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-# mystickymonologues
-=======
-# MyStickyMonologues 🎙️
 
-A voice-powered sticky notes app for Windows 10+, built with .NET 9.0 WPF.
+#A voice-powered sticky notes app for Windows 10+, built with .NET 9.0 WPF.
 
 ## Features
 - 🎙️ Record your voice → AI transcribes & fixes spelling/pronunciation
