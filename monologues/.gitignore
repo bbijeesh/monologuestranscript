@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+dist/
+build/
+__pycache__/
+bin/
+debug/
+obj/
+
+# Environment
+.env
+.env.local
+.env.*.local
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build outputs
+*.log
+.cache/
+.pytest_cache/
+coverage/
+.nyc_output/
+
+# Temp files
+*.tmp
+*.bak
+.temp/
+tmp/

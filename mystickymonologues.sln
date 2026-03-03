@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36511.14 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "monologues", "monologues\monologues.csproj", "{4C346F6C-7BFB-D696-1DA3-0D3840E9CE9E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C346F6C-7BFB-D696-1DA3-0D3840E9CE9E}.Debug|x64.ActiveCfg = Debug|x64
+		{4C346F6C-7BFB-D696-1DA3-0D3840E9CE9E}.Debug|x64.Build.0 = Debug|x64
+		{4C346F6C-7BFB-D696-1DA3-0D3840E9CE9E}.Release|x64.ActiveCfg = Release|x64
+		{4C346F6C-7BFB-D696-1DA3-0D3840E9CE9E}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FB50ABE7-37D2-47A7-B7D4-B4EB59C208C8}
+	EndGlobalSection
+EndGlobal
