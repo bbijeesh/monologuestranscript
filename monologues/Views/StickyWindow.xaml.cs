@@ -18,10 +18,12 @@ public partial class StickyWindow : Window
     private readonly int _windowIndex;
     private bool _isRecording = false;
     private bool _isInternalUpdate = false; // prevent recursive save on programmatic updates
+    private readonly string? _initialContent;  // optional content to pre-fill (e.g. opened from history)
 
     public StickyWindow(SettingsService settings, AIService aiService,
-        AudioService audioService, WindowManagerService windowManager)
+        AudioService audioService, WindowManagerService windowManager, string? initialContent = null)
     {
+        _initialContent = initialContent;
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
@@ -82,13 +84,25 @@ public partial class StickyWindow : Window
     {
         bool setupDone = _settings.Settings.IsSetupComplete;
         BtnSettings.Visibility = setupDone ? Visibility.Visible : Visibility.Collapsed;
+        BtnList.Visibility     = setupDone ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BtnList_Click(object sender, RoutedEventArgs e)
+    {
+        var listWin = new NotesListWindow(_settings, _aiService, _windowManager)
+        {
+            Owner = this,
+            Left  = this.Left + this.Width + 8,
+            Top   = this.Top
+        };
+        listWin.Show();
     }
 
     private void LoadExistingNote()
     {
         try
         {
-            var text = _settings.LoadNote(_windowId);
+            var text = _initialContent ?? _settings.LoadNote(_windowId);
             _isInternalUpdate = true;
             TxtNotes.IsReadOnly = false; // allow user editing
             TxtNotes.Text = text;

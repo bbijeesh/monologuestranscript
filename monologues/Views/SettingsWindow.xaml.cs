@@ -15,6 +15,11 @@ public partial class SettingsWindow : Window
     private readonly SettingsService _settings;
     private string _selectedModelId = "";
 
+    // In-memory per-model API keys – flushed to settings only on Save
+    private readonly Dictionary<string, string> _pendingApiKeys = new();
+    // Suppresses the ApiKey_Changed side-effect while we swap keys programmatically
+    private bool _loadingModelKey = false;
+
     public SettingsWindow(SettingsService settings)
     {
         _settings = settings;
@@ -30,12 +35,42 @@ public partial class SettingsWindow : Window
         var s = _settings.Settings;
         TxtName.Text = s.UserName;
         TxtEmail.Text = s.UserEmail;
-        TxtApiKey.Text = s.AIApiKey;
         TxtKeyFile.Text = s.AIKeyFilePath;
         TxtMaxWindows.Text = s.MaxWindows.ToString();
         TxtNotesFolder.Text = s.NotesFolder;
 
         _selectedModelId = s.AIModelId ?? "whisper-1";
+
+        // Seed the in-memory dict from stored keys
+        _pendingApiKeys.Clear();
+        foreach (var kv in s.AIApiKeys)
+            _pendingApiKeys[kv.Key] = kv.Value;
+
+        // Show the key for the initially-selected model
+        LoadApiKeyForCurrentModel();
+    }
+
+    /// <summary>Reads the current model's key into the API key text box.</summary>
+    private void LoadApiKeyForCurrentModel()
+    {
+        _loadingModelKey = true;
+        try
+        {
+            TxtApiKey.Text = _pendingApiKeys.TryGetValue(_selectedModelId, out var k) ? k : "";
+            UpdateApiKeyLabel();
+        }
+        finally { _loadingModelKey = false; }
+    }
+
+    /// <summary>Updates the label above the API key field to reflect the active model.</summary>
+    private void UpdateApiKeyLabel()
+    {
+        if (TxtApiKeyLabel == null) return;
+        var allModels = AIModelCatalog.OpenAIModels.Concat(AIModelCatalog.GeminiModels);
+        var current = allModels.FirstOrDefault(m => m.ModelId == _selectedModelId);
+        TxtApiKeyLabel.Text = current != null
+            ? $"API Key  ({current.DisplayName})"
+            : "API Key";
     }
 
     private void PopulateModels()
@@ -69,10 +104,16 @@ public partial class SettingsWindow : Window
 
     private void SelectModel(AIModel model, WpfButton btn)
     {
+        // Persist whatever the user typed for the current model before switching
+        _pendingApiKeys[_selectedModelId] = TxtApiKey.Text.Trim();
+
         _selectedModelId = model.ModelId;
-        
+
         // Auto-set provider based on selected model
         _settings.Settings.AIProvider = model.Provider;
+
+        // Load this model's key (or empty) into the text box
+        LoadApiKeyForCurrentModel();
 
         foreach (WpfButton modelBtn in ModelsContainer.Items)
         {
@@ -116,10 +157,17 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        // Flush the currently-visible API key into the pending dict before saving
+        _pendingApiKeys[_selectedModelId] = TxtApiKey.Text.Trim();
+
         var s = _settings.Settings;
         s.UserName = TxtName.Text.Trim();
         s.UserEmail = TxtEmail.Text.Trim();
-        s.AIApiKey = TxtApiKey.Text.Trim();
+        // Write all per-model keys (skip blank entries to keep the file tidy)
+        s.AIApiKeys = _pendingApiKeys
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+        s.AIApiKey = ""; // ensure legacy field stays clear
         s.AIKeyFilePath = TxtKeyFile.Text.Trim();
         s.AIModelId = _selectedModelId;
         s.NotesFolder = TxtNotesFolder.Text.Trim();
@@ -173,6 +221,8 @@ public partial class SettingsWindow : Window
 
     private void ApiKey_Changed(object sender, TextChangedEventArgs e)
     {
+        // Don't clear the key-file path when we're swapping keys programmatically
+        if (_loadingModelKey) return;
         if (!string.IsNullOrWhiteSpace(TxtApiKey.Text) && TxtKeyFile != null)
             TxtKeyFile.Text = "";
     }

@@ -46,6 +46,14 @@ public class SettingsService
                         "MyStickyMonologues");
                 }
             }
+
+            // One-time migration: move legacy single AIApiKey into the per-model dictionary
+            var s = _config.AppSettings;
+            if (!string.IsNullOrWhiteSpace(s.AIApiKey) && s.AIApiKeys.Count == 0)
+            {
+                s.AIApiKeys[s.AIModelId] = s.AIApiKey;
+                s.AIApiKey = ""; // clear legacy field
+            }
         }
         catch
         {
@@ -55,6 +63,10 @@ public class SettingsService
                 "MyStickyMonologues");
         }
     }
+
+    /// <summary>Returns the API key stored for <paramref name="modelId"/>, or an empty string.</summary>
+    public string GetApiKeyForModel(string modelId)
+        => Settings.AIApiKeys.TryGetValue(modelId, out var k) ? k : "";
 
     public void Save()
     {
@@ -93,5 +105,46 @@ public class SettingsService
     {
         var path = GetNoteFilePath(windowId);
         return File.Exists(path) ? File.ReadAllText(path) : "";
+    }
+
+    /// <summary>
+    /// Returns all saved note entries across all date folders, newest-first.
+    /// </summary>
+    public List<NoteEntry> GetAllNoteEntries()
+    {
+        var entries = new List<NoteEntry>();
+        var notesRoot = Settings.NotesFolder;
+        if (!Directory.Exists(notesRoot)) return entries;
+
+        foreach (var dateDir in Directory.GetDirectories(notesRoot).OrderByDescending(d => d))
+        {
+            var dirName = Path.GetFileName(dateDir);
+            if (!DateTime.TryParseExact(dirName, "yyyy-MM-dd", null,
+                System.Globalization.DateTimeStyles.None, out var date))
+                continue;
+
+            foreach (var file in Directory.GetFiles(dateDir, "note_*.txt").OrderBy(f => f))
+            {
+                var allLines = File.ReadAllLines(file);
+                var nonEmpty = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).Take(3).ToArray();
+                var preview = nonEmpty.Length > 0
+                    ? string.Join(Environment.NewLine, nonEmpty)
+                    : "(empty)";
+
+                var stem = Path.GetFileNameWithoutExtension(file);
+                var windowId = stem.StartsWith("note_") ? stem[5..] : stem;
+
+                entries.Add(new NoteEntry
+                {
+                    FilePath = file,
+                    Date = date,
+                    WindowId = windowId,
+                    Preview = preview,
+                    TotalLines = allLines.Length
+                });
+            }
+        }
+
+        return entries;
     }
 }

@@ -56,7 +56,7 @@
                         </ScrollViewer>
                     </Border>
 
-                    <TextBlock Text="API Key" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock x:Name="TxtApiKeyLabel" Text="API Key" Style="{StaticResource LabelStyle}"/>
                     <TextBox x:Name="TxtApiKey" Style="{StaticResource InputStyle}" 
                              TextChanged="ApiKey_Changed"/>
 

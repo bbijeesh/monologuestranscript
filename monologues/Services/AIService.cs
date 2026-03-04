@@ -22,7 +22,7 @@ public class AIService
         var s = _settings.Settings;
         if (!string.IsNullOrWhiteSpace(s.AIKeyFilePath) && File.Exists(s.AIKeyFilePath))
             return File.ReadAllText(s.AIKeyFilePath).Trim();
-        return s.AIApiKey;
+        return _settings.GetApiKeyForModel(s.AIModelId);
     }
 
     public async Task<string> TranscribeAndFixAsync(byte[] audioWavData)
