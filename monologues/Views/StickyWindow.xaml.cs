@@ -14,6 +14,8 @@ public partial class StickyWindow : Window
     private readonly AIService _aiService;
     private readonly AudioService _audioService;
     private readonly WindowManagerService _windowManager;
+    private readonly MCPServer? _mcpServer; // In-process MCP server
+    private readonly MCPProcessManager? _mcpProcessManager; // Separate process MCP server
     private readonly string _windowId;
     private readonly int _windowIndex;
     private bool _isRecording = false;
@@ -21,13 +23,16 @@ public partial class StickyWindow : Window
     private readonly string? _initialContent;  // optional content to pre-fill (e.g. opened from history)
 
     public StickyWindow(SettingsService settings, AIService aiService,
-        AudioService audioService, WindowManagerService windowManager, string? initialContent = null)
+        AudioService audioService, WindowManagerService windowManager,
+        MCPServer? mcpServer = null, MCPProcessManager? mcpProcessManager = null, string? initialContent = null)
     {
         _initialContent = initialContent;
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _aiService = aiService ?? throw new ArgumentNullException(nameof(aiService));
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         _windowManager = windowManager ?? throw new ArgumentNullException(nameof(windowManager));
+        _mcpServer = mcpServer;
+        _mcpProcessManager = mcpProcessManager;
 
         // Register window and get assigned index
         var (id, index) = _windowManager.RegisterWindow();
@@ -52,6 +57,17 @@ public partial class StickyWindow : Window
 
         UpdateUI();
         LoadExistingNote();
+        ShowMCPStatus();
+        
+        // Subscribe to MCP status changes for live UI updates
+        if (_mcpServer != null)
+        {
+            _mcpServer.StatusChanged += (s, status) => ShowMCPStatus();
+        }
+        if (_mcpProcessManager != null)
+        {
+            _mcpProcessManager.StatusChanged += (s, status) => ShowMCPStatus();
+        }
 
         this.LocationChanged += StickyWindow_LocationOrSizeChanged;
         this.SizeChanged += StickyWindow_LocationOrSizeChanged;
@@ -85,6 +101,32 @@ public partial class StickyWindow : Window
         bool setupDone = _settings.Settings.IsSetupComplete;
         BtnSettings.Visibility = setupDone ? Visibility.Visible : Visibility.Collapsed;
         BtnList.Visibility     = setupDone ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ShowMCPStatus()
+    {
+        // Check in-process MCP server
+        if (_mcpServer != null)
+        {
+            var status = _mcpServer.IsRunning
+                ? $"✓ MCP server running (in-process)"
+                : "MCP server is not running";
+            TxtStatus.Text = status;
+            return;
+        }
+
+        // Check separate process MCP server
+        if (_mcpProcessManager != null)
+        {
+            var status = _mcpProcessManager.IsRunning
+                ? $"✓ MCP server running (PID: {_mcpProcessManager.ProcessId})"
+                : "MCP server is not running";
+            TxtStatus.Text = status;
+            return;
+        }
+
+        // No MCP server configured
+        TxtStatus.Text = "";
     }
 
     private void BtnList_Click(object sender, RoutedEventArgs e)
@@ -125,7 +167,7 @@ public partial class StickyWindow : Window
             return;
         }
 
-        var win = new StickyWindow(_settings, _aiService, new AudioService(), _windowManager);
+        var win = new StickyWindow(_settings, _aiService, new AudioService(), _windowManager, _mcpServer, _mcpProcessManager);
         win.Left = this.Left + 30;
         win.Top = this.Top + 30;
         win.Show();
@@ -148,7 +190,7 @@ public partial class StickyWindow : Window
 
     private void OpenSettings()
     {
-        var settingsWin = new SettingsWindow(_settings);
+        var settingsWin = new SettingsWindow(_settings, _mcpServer, _mcpProcessManager);
         settingsWin.Owner = this;
         var result = settingsWin.ShowDialog();
         if (result == true)

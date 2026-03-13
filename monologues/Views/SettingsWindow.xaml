@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings – MyStickyMonologues"
-        Height="833" Width="497"
+        Height="900" Width="497"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource BrushBackground}"
@@ -89,6 +89,38 @@
 
                     <TextBlock Text="Max Sticky Windows (1–10)" Style="{StaticResource LabelStyle}"/>
                     <TextBox x:Name="TxtMaxWindows" Style="{StaticResource InputStyle}" Width="80" HorizontalAlignment="Left"/>
+
+                    <TextBlock Text="MCP Server" Style="{StaticResource MutedTextStyle}" Margin="0,18,0,0"/>
+                    <Separator Background="{StaticResource BrushBorder}" Margin="0,4,0,0"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <CheckBox x:Name="ChkMCPEnabled" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Enable MCP Server for Claude Desktop" VerticalAlignment="Center" 
+                                   Foreground="{StaticResource BrushText}"/>
+                    </StackPanel>
+                    <TextBlock Text="Allows Claude to access your transcript files." 
+                               Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,4,0,12" TextWrapping="Wrap"/>
+
+                    <TextBlock Text="MCP Server Port" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="TxtMCPPort" Style="{StaticResource InputStyle}" Width="100" HorizontalAlignment="Left"/>
+                    <TextBlock Text="Port Claude Desktop connects to. Restart app after changing." 
+                               Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,2,0,12" TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                        <CheckBox x:Name="ChkMCPSeparateProcess" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Run MCP server in separate process" VerticalAlignment="Center" 
+                                   Foreground="{StaticResource BrushText}"/>
+                    </StackPanel>
+                    <TextBlock Text="When unchecked (default), MCP runs in the same process as the app. Check this to run in a separate process." 
+                               Foreground="{StaticResource BrushTextMuted}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,12">
+                        <Button x:Name="BtnStartMCP" Content="Start MCP Server" Click="StartMCP_Click" 
+                                Style="{StaticResource ButtonBase}" Margin="0,0,8,0" Padding="12,8"/>
+                        <Button x:Name="BtnStopMCP" Content="Stop MCP Server" Click="StopMCP_Click"
+                                Style="{StaticResource ButtonBase}" Background="#c00" Padding="12,8"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TxtMCPStatus" Text="" Foreground="{StaticResource BrushPrimary}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                     <TextBlock x:Name="TxtStatus" Text="" Foreground="{StaticResource BrushDanger}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"/>
                 </StackPanel>

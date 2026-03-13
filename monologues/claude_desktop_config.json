@@ -1,0 +1,59 @@
+{
+  "_readme": [
+    "This file shows the snippet to add to your Claude Desktop config.",
+    "Config file location: %APPDATA%\\Claude\\claude_desktop_config.json",
+    "",
+    "TWO OPTIONS — pick the one that matches your Claude Desktop version:",
+    "",
+    "  OPTION A (Claude Desktop 0.10+, native HTTP — no extra tools required)",
+    "    Use the 'mcpServers' block under OPTION_A below.",
+    "",
+    "  OPTION B (older Claude Desktop — requires Node.js installed)",
+    "    Use the 'mcpServers' block under OPTION_B below.",
+    "",
+    "Change port 3000 if you changed it in MyStickyMonologues Settings."
+  ],
+
+  "OPTION_A_streamable_http": {
+    "_comment": "Paste this mcpServers block into claude_desktop_config.json",
+    "mcpServers": {
+      "monologues": {
+        "url": "http://localhost:3000/mcp"
+      }
+    }
+  },
+
+  "OPTION_B_sse_via_mcp_remote": {
+    "_comment": "Paste this mcpServers block into claude_desktop_config.json (requires Node.js)",
+    "mcpServers": {
+      "monologues": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "http://localhost:3000/sse"]
+      }
+    }
+  },
+
+  "tools_exposed": [
+    {
+      "name": "list_transcripts",
+      "description": "List all transcript files recorded by MyStickyMonologues",
+      "inputs": "none"
+    },
+    {
+      "name": "read_transcript",
+      "description": "Read the full content of a specific transcript file",
+      "inputs": {
+        "file": "Absolute path returned by list_transcripts"
+      }
+    }
+  ],
+
+  "test_with_curl": {
+    "health":           "curl http://localhost:3000/health",
+    "initialize":       "curl -X POST http://localhost:3000/mcp -H \"Content-Type: application/json\" -d \"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":1,\\\"method\\\":\\\"initialize\\\",\\\"params\\\":{\\\"protocolVersion\\\":\\\"2025-11-25\\\",\\\"capabilities\\\":{},\\\"clientInfo\\\":{\\\"name\\\":\\\"test\\\",\\\"version\\\":\\\"1.0\\\"}}}\"",
+    "list_tools":       "curl -X POST http://localhost:3000/mcp -H \"Content-Type: application/json\" -d \"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":2,\\\"method\\\":\\\"tools/list\\\"}\"",
+    "list_transcripts": "curl -X POST http://localhost:3000/mcp -H \"Content-Type: application/json\" -d \"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":3,\\\"method\\\":\\\"tools/call\\\",\\\"params\\\":{\\\"name\\\":\\\"list_transcripts\\\",\\\"arguments\\\":{}}}\"",
+    "read_transcript":  "curl -X POST http://localhost:3000/mcp -H \"Content-Type: application/json\" -d \"{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":4,\\\"method\\\":\\\"tools/call\\\",\\\"params\\\":{\\\"name\\\":\\\"read_transcript\\\",\\\"arguments\\\":{\\\"file\\\":\\\"C:\\\\Users\\\\you\\\\Documents\\\\MyStickyMonologues\\\\2026-03-12\\\\note_abc.txt\\\"}}}\"",
+    "sse_connect":      "curl -N http://localhost:3000/sse"
+  }
+}

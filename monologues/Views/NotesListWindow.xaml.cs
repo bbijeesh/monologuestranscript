@@ -159,7 +159,7 @@ public partial class NotesListWindow : Window
         }
 
         var content = File.Exists(entry.FilePath) ? File.ReadAllText(entry.FilePath) : "";
-        var win = new StickyWindow(_settings, _aiService, new AudioService(), _windowManager, content);
+        var win = new StickyWindow(_settings, _aiService, new AudioService(), _windowManager, initialContent: content);
         win.Left = this.Left + 30;
         win.Top = this.Top + 30;
         win.Show();
