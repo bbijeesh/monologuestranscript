@@ -13,6 +13,8 @@ namespace mystickymonologues.Views;
 public partial class SettingsWindow : Window
 {
     private readonly SettingsService _settings;
+    private readonly MCPServer? _mcpServer; // In-process MCP server
+    private readonly MCPProcessManager? _mcpProcessManager; // Separate process MCP server
     private string _selectedModelId = "";
 
     // In-memory per-model API keys – flushed to settings only on Save
@@ -20,11 +22,15 @@ public partial class SettingsWindow : Window
     // Suppresses the ApiKey_Changed side-effect while we swap keys programmatically
     private bool _loadingModelKey = false;
 
-    public SettingsWindow(SettingsService settings)
+    public SettingsWindow(SettingsService settings, MCPServer? mcpServer = null, MCPProcessManager? mcpProcessManager = null)
     {
         _settings = settings;
+        _mcpServer = mcpServer;
+        _mcpProcessManager = mcpProcessManager;
         InitializeComponent();
         LoadSettings();
+        WireMCPEvents();
+        UpdateMCPStatus();
         
         // Populate models after window is fully loaded
         this.Loaded += (s, e) => PopulateModels();
@@ -38,6 +44,9 @@ public partial class SettingsWindow : Window
         TxtKeyFile.Text = s.AIKeyFilePath;
         TxtMaxWindows.Text = s.MaxWindows.ToString();
         TxtNotesFolder.Text = s.NotesFolder;
+        ChkMCPEnabled.IsChecked = s.MCPServerEnabled;
+        TxtMCPPort.Text = s.MCPServerPort.ToString();
+        ChkMCPSeparateProcess.IsChecked = s.MCPServerSeparateProcess;
 
         _selectedModelId = s.AIModelId ?? "whisper-1";
 
@@ -151,6 +160,12 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        if (!int.TryParse(TxtMCPPort.Text, out int mcpPort) || mcpPort < 1024 || mcpPort > 65535)
+        {
+            TxtStatus.Text = "MCP port must be between 1024 and 65535.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_selectedModelId))
         {
             TxtStatus.Text = "Please select a model.";
@@ -172,6 +187,9 @@ public partial class SettingsWindow : Window
         s.AIModelId = _selectedModelId;
         s.NotesFolder = TxtNotesFolder.Text.Trim();
         s.MaxWindows = maxW;
+        s.MCPServerEnabled = ChkMCPEnabled.IsChecked ?? false;
+        s.MCPServerPort = mcpPort;
+        s.MCPServerSeparateProcess = ChkMCPSeparateProcess.IsChecked ?? false;
         s.IsSetupComplete = true;
         // AIProvider is already set in SelectModel method
 
@@ -231,5 +249,100 @@ public partial class SettingsWindow : Window
     {
         var aboutWindow = new AboutWindow();
         aboutWindow.ShowDialog();
+    }
+
+    // ── MCP Server Management ────────────────────────────────────────────────
+
+    private void WireMCPEvents()
+    {
+        if (_mcpServer != null)
+        {
+            _mcpServer.StatusChanged += (s, status) => TxtMCPStatus.Text = status;
+        }
+        if (_mcpProcessManager != null)
+        {
+            _mcpProcessManager.StatusChanged += (s, status) => TxtMCPStatus.Text = status;
+        }
+    }
+
+    private void UpdateMCPStatus()
+    {
+        // Check in-process MCP server
+        if (_mcpServer != null)
+        {
+            TxtMCPStatus.Text = _mcpServer.IsRunning
+                ? "Running (in-process)"
+                : "Not running";
+            return;
+        }
+
+        // Check separate process MCP server
+        if (_mcpProcessManager != null)
+        {
+            TxtMCPStatus.Text = _mcpProcessManager.IsRunning
+                ? $"Running (PID: {_mcpProcessManager.ProcessId})"
+                : "Not running";
+            return;
+        }
+
+        TxtMCPStatus.Text = "";
+    }
+
+    private void StartMCP_Click(object sender, RoutedEventArgs e)
+    {
+        // In-process MCP server
+        if (_mcpServer != null)
+        {
+            _mcpServer.Start();
+            UpdateMCPStatus();
+            TxtStatus.Text = "";
+            return;
+        }
+
+        // Separate process MCP server
+        if (_mcpProcessManager != null)
+        {
+            if (_mcpProcessManager.Start())
+            {
+                UpdateMCPStatus();
+                TxtStatus.Text = "";
+            }
+            else
+            {
+                TxtStatus.Text = "Failed to start MCP server";
+            }
+            return;
+        }
+
+        TxtStatus.Text = "MCP server not available";
+    }
+
+    private void StopMCP_Click(object sender, RoutedEventArgs e)
+    {
+        // In-process MCP server
+        if (_mcpServer != null)
+        {
+            _mcpServer.Stop();
+            UpdateMCPStatus();
+            TxtStatus.Text = "";
+            return;
+        }
+
+        // Separate process MCP server
+        if (_mcpProcessManager != null)
+        {
+            if (_mcpProcessManager.Stop())
+            {
+                UpdateMCPStatus();
+                TxtStatus.Text = "";
+            }
+            else
+            {
+                TxtStatus.Text = "Failed to stop MCP server";
+            }
+            return;
+        }
+
+        TxtStatus.Text = "MCP server not available";
     }
 }

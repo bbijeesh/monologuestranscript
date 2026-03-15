@@ -23,6 +23,15 @@ public class AppSettings
 
     public string AIKeyFilePath { get; set; } = "";
 
+    /// <summary>Enable local MCP server for Claude Desktop integration (default false).</summary>
+    public bool MCPServerEnabled { get; set; } = false;
+
+    /// <summary>Port the local MCP server listens on (default 3000).</summary>
+    public int MCPServerPort { get; set; } = 3000;
+
+    /// <summary>Run MCP server in separate process (default false = in-process).</summary>
+    public bool MCPServerSeparateProcess { get; set; } = false;
+
     // Store positions for windows by index
     public List<WindowPosition> WindowPositions { get; set; } = new();
 }
